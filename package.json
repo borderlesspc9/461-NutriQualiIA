@@ -13,12 +13,14 @@
     "test:watch": "vitest",
     "cap:sync": "npx cap sync",
     "cap:sync:android": "npx cap sync android",
-    "android": "npx cap open android"
+    "android": "npx cap open android",
+    "ios": "npx cap open ios"
   },
   "dependencies": {
     "@capacitor/android": "^8.1.0",
     "@capacitor/cli": "^8.1.0",
     "@capacitor/core": "^8.1.0",
+    "@capacitor/ios": "^8.1.0",
     "@hookform/resolvers": "^3.10.0",
     "@radix-ui/react-accordion": "^1.2.11",
     "@radix-ui/react-alert-dialog": "^1.1.14",
