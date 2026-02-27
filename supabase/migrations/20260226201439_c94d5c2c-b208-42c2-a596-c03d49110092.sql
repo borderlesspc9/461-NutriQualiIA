@@ -1,0 +1,1 @@
+DELETE FROM non_conformities;
