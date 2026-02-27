@@ -10,9 +10,13 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "cap:sync": "npx cap sync",
+    "cap:sync:android": "npx cap sync android",
+    "android": "npx cap open android"
   },
   "dependencies": {
+    "@capacitor/android": "^8.1.0",
     "@capacitor/cli": "^8.1.0",
     "@capacitor/core": "^8.1.0",
     "@hookform/resolvers": "^3.10.0",
