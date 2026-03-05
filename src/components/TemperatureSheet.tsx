@@ -6,6 +6,7 @@ import { syncToCloud } from '@/lib/storage';
 import { useAuth } from '@/hooks/useAuth';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { AlertTriangle } from 'lucide-react';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -232,13 +233,22 @@ const TemperatureSheet = ({ title, sheetType }: TemperatureSheetProps) => {
 
         <p className="text-[10px] text-muted-foreground mt-2 flex items-center gap-1">ⓘ Preencha todos os campos obrigatórios para finalizar o monitoramento.</p>
 
-        <div className="flex gap-3 mt-4 pb-6">
-          <button onClick={handleIdentifyNCs} className="flex-1 bg-destructive text-destructive-foreground py-3 rounded-xl font-semibold text-sm flex items-center justify-center gap-2">
-            ⚠ IDENTIFICAR NÃO CONFORMIDADE
+        <div className="flex flex-col sm:flex-row gap-3 mt-4 pb-6">
+          <button
+            type="button"
+            onClick={handleIdentifyNCs}
+            className="flex-1 min-h-[52px] py-3.5 px-4 rounded-2xl border-2 border-destructive bg-destructive/10 text-destructive font-semibold text-sm flex items-center justify-center gap-2.5 shadow-sm active:scale-[0.98] transition-transform touch-manipulation"
+          >
+            <AlertTriangle className="shrink-0 size-5" strokeWidth={2.5} />
+            <span className="text-center leading-tight">Identificar não conformidade</span>
           </button>
-          <button onClick={handleFinalize} disabled={saving}
-            className="flex-1 bg-primary text-primary-foreground py-3 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-50">
-            {saving ? 'Enviando...' : '✓ FINALIZAR'}
+          <button
+            type="button"
+            onClick={handleFinalize}
+            disabled={saving}
+            className="flex-1 min-h-[52px] py-3.5 px-4 rounded-2xl bg-primary text-primary-foreground font-semibold text-sm flex items-center justify-center gap-2 shadow-sm active:scale-[0.98] transition-transform touch-manipulation disabled:opacity-50 disabled:active:scale-100"
+          >
+            {saving ? 'Enviando...' : '✓ Finalizar'}
           </button>
         </div>
       </main>

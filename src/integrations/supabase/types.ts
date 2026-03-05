@@ -104,6 +104,27 @@ export type Database = {
         }
         Relationships: []
       }
+      custom_sheets: {
+        Row: {
+          id: string
+          user_id: string
+          name: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          name: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          name?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
       spreadsheets: {
         Row: {
           created_at: string

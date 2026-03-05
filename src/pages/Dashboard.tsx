@@ -1,10 +1,21 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { TrendingUp, TrendingDown, Minus, FolderOpen, ClipboardList, Settings, LogOut, Moon, Sun, X } from 'lucide-react';
+import { TrendingUp, TrendingDown, Minus, FolderOpen, ClipboardList, Settings, LogOut, Moon, Sun, X, Plus } from 'lucide-react';
 import { fetchDashboardStats, fetchConformityByUnit, fetchNCRankingByType } from '@/lib/supabaseService';
+import { getCustomSheets, addCustomSheet, type CustomSheet } from '@/lib/customSheets';
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import logoIcon from '@/assets/logo-icon.png';
 
 interface SheetCard {
@@ -13,6 +24,8 @@ interface SheetCard {
   status: 'aguardando' | 'ativo' | 'finalizado';
   route: string | null;
   ncs?: number;
+  isCreate?: boolean;
+  customId?: string;
 }
 
 const sheets: SheetCard[] = [
@@ -26,10 +39,14 @@ const sheets: SheetCard[] = [
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { profile, signOut } = useAuth();
+  const { user, profile, signOut } = useAuth();
   const [showAllSheets, setShowAllSheets] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [createSheetOpen, setCreateSheetOpen] = useState(false);
+  const [newSheetName, setNewSheetName] = useState('');
+  const [customSheets, setCustomSheets] = useState<CustomSheet[]>([]);
+  const [customSheetsLoading, setCustomSheetsLoading] = useState(false);
   const [darkMode, setDarkMode] = useState(() => document.documentElement.classList.contains('dark'));
   const [stats, setStats] = useState({ conformity: 100, records: 0, justified: 0, unjustified: 0 });
   const [rankingUnits, setRankingUnits] = useState<Array<{ unitName: string; conformity: number; records: number }>>([]);
@@ -45,6 +62,21 @@ const Dashboard = () => {
     if (darkMode) document.documentElement.classList.add('dark');
     else document.documentElement.classList.remove('dark');
   }, [darkMode]);
+
+  // Carregar planilhas personalizadas (Supabase custom_sheets ou localStorage)
+  useEffect(() => {
+    if (!user?.id) {
+      setCustomSheets([]);
+      return;
+    }
+    let cancelled = false;
+    setCustomSheetsLoading(true);
+    getCustomSheets(user.id)
+      .then((list) => { if (!cancelled) setCustomSheets(list); })
+      .catch(() => { if (!cancelled) setCustomSheets([]); })
+      .finally(() => { if (!cancelled) setCustomSheetsLoading(false); });
+    return () => { cancelled = true; };
+  }, [user?.id]);
 
   // Load data
   useEffect(() => {
@@ -79,6 +111,20 @@ const Dashboard = () => {
     navigate('/login');
   };
 
+  const handleCreateCustomSheet = async () => {
+    const name = newSheetName.trim();
+    if (!name || !user?.id) return;
+    try {
+      const created = await addCustomSheet(user.id, name);
+      setCustomSheets(await getCustomSheets(user.id));
+      setNewSheetName('');
+      setCreateSheetOpen(false);
+      navigate(`/spreadsheet/custom/${created.id}`);
+    } catch {
+      // nome vazio ou erro já tratado
+    }
+  };
+
   const chartData = [{ date: 'Hoje', conformidade: stats.conformity }];
 
   return (
@@ -104,18 +150,33 @@ const Dashboard = () => {
 
         {/* Stats */}
         <h2 className="text-sm font-semibold text-foreground mb-3">Resumo</h2>
-        <div className="grid grid-cols-4 gap-2 mb-6">
-          <StatBox label="CONFORMIDADE" value={`${stats.conformity}%`} color="text-primary" />
-          <StatBox label="REGISTROS" value={String(stats.records)} />
-          <StatBox label="AÇÕES CORRETIVAS" value={String(stats.justified)} color="text-muted-foreground" />
-          <StatBox label="NÃO CONFORMIDADES" value={String(stats.unjustified)} color="text-destructive" />
+        <div className="grid grid-cols-2 gap-2 mb-6 min-w-0 w-full">
+          <StatBox label="Conformidade" value={`${stats.conformity}%`} color="text-primary" />
+          <StatBox label="Registros" value={String(stats.records)} />
+          <StatBox label="Ações corretivas" value={String(stats.justified)} color="text-muted-foreground" />
+          <StatBox label="Não conform." value={String(stats.unjustified)} color="text-destructive" />
         </div>
 
         {/* Sheets grid */}
         <h2 className="text-sm font-semibold text-foreground mb-3">Planilhas Inteligentes</h2>
         <div className="grid grid-cols-2 gap-3">
+          <button
+            type="button"
+            onClick={() => setCreateSheetOpen(true)}
+            className="bg-card rounded-xl border-2 border-dashed border-border p-3 flex items-center justify-center gap-2 text-muted-foreground hover:border-primary hover:text-primary hover:bg-primary/5 transition-colors min-h-[80px]"
+          >
+            <Plus className="size-5 shrink-0" />
+            <span className="text-sm font-medium">Criar minha planilha</span>
+          </button>
           {(showAllSheets ? sheets : sheets.slice(0, 4)).map((s) => (
             <SheetCardComponent key={s.title} sheet={s} onClick={() => s.route && navigate(s.route)} />
+          ))}
+          {customSheets.map((s) => (
+            <SheetCardComponent
+              key={s.id}
+              sheet={{ title: s.name, type: 'cold', status: 'aguardando', route: `/spreadsheet/custom/${s.id}` }}
+              onClick={() => navigate(`/spreadsheet/custom/${s.id}`)}
+            />
           ))}
         </div>
         <button onClick={() => setShowAllSheets(!showAllSheets)}
@@ -187,6 +248,39 @@ const Dashboard = () => {
           </div>
         )}
       </main>
+
+      {/* Dialog criar planilha personalizada */}
+      <Dialog open={createSheetOpen} onOpenChange={setCreateSheetOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-foreground">Nova planilha personalizada</DialogTitle>
+            <DialogDescription className="text-muted-foreground">
+              Dê um nome para sua planilha. Ela terá o mesmo formato de monitoramento de temperatura das demais.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-2 py-2">
+            <label htmlFor="sheet-name" className="text-sm font-medium text-foreground">
+              Nome da planilha
+            </label>
+            <Input
+              id="sheet-name"
+              value={newSheetName}
+              onChange={(e) => setNewSheetName(e.target.value)}
+              placeholder="Ex: Recebimento de mercadorias"
+              className="bg-background text-foreground"
+              onKeyDown={(e) => e.key === 'Enter' && handleCreateCustomSheet()}
+            />
+          </div>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button type="button" variant="outline" onClick={() => setCreateSheetOpen(false)}>
+              Cancelar
+            </Button>
+            <Button type="button" onClick={handleCreateCustomSheet} disabled={!newSheetName.trim()}>
+              Criar e abrir
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Side Menu */}
       {menuOpen && (
@@ -288,9 +382,9 @@ function MenuButton({ icon, label, onClick }: { icon: React.ReactNode; label: st
 
 function StatBox({ label, value, color, clickable, onClick }: { label: string; value: string; color?: string; clickable?: boolean; onClick?: () => void }) {
   return (
-    <div className={`bg-card rounded-xl border border-border p-3 ${clickable ? 'cursor-pointer hover:shadow-md transition-shadow' : ''}`} onClick={onClick}>
-      <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">{label}</p>
-      <p className={`text-lg font-bold ${color || 'text-foreground'}`}>{value}</p>
+    <div className={`bg-card rounded-xl border border-border p-3 min-w-0 w-full overflow-hidden flex flex-col justify-center ${clickable ? 'cursor-pointer hover:shadow-md transition-shadow' : ''}`} onClick={onClick}>
+      <p className="text-[9px] font-medium text-muted-foreground uppercase tracking-wide leading-tight break-words line-clamp-2 min-h-[24px] flex items-center">{label}</p>
+      <p className={`text-base sm:text-lg font-bold mt-1 truncate ${color || 'text-foreground'}`}>{value}</p>
     </div>
   );
 }
@@ -303,14 +397,14 @@ function SheetCardComponent({ sheet, onClick }: { sheet: SheetCard; onClick: () 
     finalizado: 'text-success',
   };
   return (
-    <div className={`bg-card rounded-xl border border-border p-3 ${sheet.route ? 'cursor-pointer hover:shadow-md transition-shadow' : 'opacity-60'}`} onClick={onClick}>
-      <div className="flex items-start gap-2">
-        <span className="text-lg">{icon}</span>
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-foreground leading-tight">{sheet.title}</p>
-          <p className={`text-xs mt-1 capitalize ${statusColors[sheet.status]}`}>{sheet.status}</p>
+    <div className={`bg-card rounded-xl border border-border p-3 overflow-hidden min-w-0 ${sheet.route ? 'cursor-pointer hover:shadow-md transition-shadow' : 'opacity-60'}`} onClick={onClick}>
+      <div className="flex items-start gap-2 min-w-0">
+        <span className="text-lg shrink-0">{icon}</span>
+        <div className="flex-1 min-w-0 overflow-hidden">
+          <p className="text-sm font-semibold text-foreground leading-tight break-words line-clamp-2 overflow-hidden" title={sheet.title}>{sheet.title}</p>
+          <p className={`text-xs mt-1 capitalize shrink-0 ${statusColors[sheet.status]}`}>{sheet.status}</p>
         </div>
-        <span className="text-xs text-primary font-medium">Abrir</span>
+        <span className="text-xs text-primary font-medium shrink-0">Abrir</span>
       </div>
     </div>
   );

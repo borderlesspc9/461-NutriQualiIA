@@ -2,8 +2,14 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+// Fallbacks para quando o projeto vem do Lovable e o .env não está preenchido.
+// Preencha o .env com as chaves do seu projeto em Supabase → Settings → API.
+const SUPABASE_URL =
+  import.meta.env.VITE_SUPABASE_URL ||
+  'https://cxtwomfylgebqdgacfgm.supabase.co';
+const SUPABASE_PUBLISHABLE_KEY =
+  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN4dHdvbWZ5bGdlYnFkZ2FjZmdtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIwNTQzODQsImV4cCI6MjA4NzYzMDM4NH0.I-_y3KR5D4UIq6nzf79e9Mn7ZVvTMbSfTGcS9iL7uSc';
 
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";

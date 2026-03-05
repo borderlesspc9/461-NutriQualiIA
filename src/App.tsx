@@ -23,6 +23,7 @@ import DinnerSheet from "./pages/DinnerSheet";
 import SupperSheet from "./pages/SupperSheet";
 import SnacksSheet from "./pages/SnacksSheet";
 import NotFound from "./pages/NotFound";
+import CustomSheetPage from "./pages/CustomSheetPage";
 
 const queryClient = new QueryClient();
 
@@ -46,6 +47,7 @@ const App = () => (
             <Route path="/spreadsheet/dinner" element={<ProtectedRoute><DinnerSheet /></ProtectedRoute>} />
             <Route path="/spreadsheet/supper" element={<ProtectedRoute><SupperSheet /></ProtectedRoute>} />
             <Route path="/spreadsheet/snacks" element={<ProtectedRoute><SnacksSheet /></ProtectedRoute>} />
+            <Route path="/spreadsheet/custom/:id" element={<ProtectedRoute><CustomSheetPage /></ProtectedRoute>} />
             <Route path="/finalized/:id" element={<ProtectedRoute><Finalized /></ProtectedRoute>} />
             
             <Route path="/cardapios" element={<ProtectedRoute><Cardapios /></ProtectedRoute>} />
