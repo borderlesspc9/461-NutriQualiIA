@@ -2,14 +2,19 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
-// Fallbacks para quando o projeto vem do Lovable e o .env não está preenchido.
-// Preencha o .env com as chaves do seu projeto em Supabase → Settings → API.
-const SUPABASE_URL =
-  import.meta.env.VITE_SUPABASE_URL ||
-  'https://cxtwomfylgebqdgacfgm.supabase.co';
-const SUPABASE_PUBLISHABLE_KEY =
-  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN4dHdvbWZ5bGdlYnFkZ2FjZmdtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIwNTQzODQsImV4cCI6MjA4NzYzMDM4NH0.I-_y3KR5D4UIq6nzf79e9Mn7ZVvTMbSfTGcS9iL7uSc';
+// Fallbacks para quando o .env não está preenchido ou no deploy (variáveis vazias/"undefined").
+// Preencha no deploy: VITE_SUPABASE_URL e VITE_SUPABASE_PUBLISHABLE_KEY (Supabase → Settings → API).
+const DEFAULT_URL = 'https://cxtwomfylgebqdgacfgm.supabase.co';
+const DEFAULT_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN4dHdvbWZ5bGdlYnFkZ2FjZmdtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIwNTQzODQsImV4cCI6MjA4NzYzMDM4NH0.I-_y3KR5D4UIq6nzf79e9Mn7ZVvTMbSfTGcS9iL7uSc';
+
+function orFallback(value: string | undefined, fallback: string): string {
+  const v = value?.trim();
+  if (v && v !== 'undefined' && v !== 'null') return v;
+  return fallback;
+}
+
+const SUPABASE_URL = orFallback(import.meta.env.VITE_SUPABASE_URL as string | undefined, DEFAULT_URL);
+const SUPABASE_PUBLISHABLE_KEY = orFallback(import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined, DEFAULT_ANON_KEY);
 
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
